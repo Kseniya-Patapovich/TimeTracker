@@ -42,8 +42,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(new AntPathRequestMatcher("/security/token", "POST")).permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/security/registration", "POST")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/security/registration", "POST")).hasRole(Roles.ADMIN.toString())
                         .requestMatchers(new AntPathRequestMatcher("/users", "POST")).hasRole(Roles.ADMIN.toString())
+                        .requestMatchers(new AntPathRequestMatcher("/record/start/**", "POST")).hasRole(Roles.USER.toString())
+                        .requestMatchers(new AntPathRequestMatcher("/record/stop/**", "PUT")).hasRole(Roles.USER.toString())
+                        .requestMatchers(new AntPathRequestMatcher("/record/totalTime/**", "GET")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/record/**", "GET")).permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

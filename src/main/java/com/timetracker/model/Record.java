@@ -12,6 +12,8 @@ import jakarta.persistence.TemporalType;
 import lombok.Data;
 
 import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.LocalDateTime;
 
 @Data
 @Entity(name = "record")
@@ -23,11 +25,11 @@ public class Record {
 
     @Column(name = "start_time")
     @Temporal(TemporalType.TIMESTAMP)
-    private Timestamp startTime;
+    private LocalDateTime startTime;
 
     @Column(name = "end_time")
     @Temporal(TemporalType.TIMESTAMP)
-    private Timestamp endTime;
+    private LocalDateTime endTime;
 
     @ManyToOne
     @JoinColumn(name = "users_id", nullable = false)
@@ -36,4 +38,7 @@ public class Record {
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
+
+    @Column(name = "total_time")
+    private Double totalTime;
 }
