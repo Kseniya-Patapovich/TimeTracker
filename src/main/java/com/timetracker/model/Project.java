@@ -9,6 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -31,5 +33,7 @@ public class Project {
 
     @Column(name = "deadline")
     //@Temporal(TemporalType.TIME)
+    @Future
+    @NotNull
     private LocalDateTime deadline;
 }
