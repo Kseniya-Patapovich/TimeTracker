@@ -1,7 +1,7 @@
 package com.timetracker.security.service;
 
-import com.timetracker.security.model.UserSecurity;
-import com.timetracker.security.repository.UserSecurityRepository;
+import com.timetracker.model.Users;
+import com.timetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,20 +13,20 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class CustomUserDetailService implements UserDetailsService {
-    private final UserSecurityRepository userSecurityRepository;
+public class CustomUserDetailsService implements UserDetailsService {
+    private final UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<UserSecurity> userSecurityInfoOptional = userSecurityRepository.findByUserLogin(username);
-        if (userSecurityInfoOptional.isEmpty()) {
+        Optional<Users> userInfoOptional = userRepository.findByLogin(username);
+        if (userInfoOptional.isEmpty()) {
             throw new UsernameNotFoundException("Username not found: " + username);
         }
-        UserSecurity userSecurity = userSecurityInfoOptional.get();
+        Users user = userInfoOptional.get();
         return User.builder()
-                .username(userSecurity.getUserLogin())
-                .password(userSecurity.getUserPassword())
-                .roles(userSecurity.getRole().toString())
+                .username(user.getLogin())
+                .password(user.getPassword())
+                .roles(user.getRole().toString())
                 .build();
     }
 }

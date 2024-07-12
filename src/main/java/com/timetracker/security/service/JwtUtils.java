@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.sql.Date;
+import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 

@@ -1,9 +1,8 @@
 package com.timetracker.controller;
 
-import com.timetracker.model.User;
+import com.timetracker.model.Users;
 import com.timetracker.model.dto.UserCreateDto;
 import com.timetracker.model.dto.UserUpdateName;
-import com.timetracker.model.dto.UserUpdatePassword;
 import com.timetracker.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,13 +26,13 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<List<Users>> getAllUsers() {
         return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable("id") Long id) {
-        Optional<User> userFromDB = userService.getUserById(id);
+    public ResponseEntity<Users> getUserById(@PathVariable("id") Long id) {
+        Optional<Users> userFromDB = userService.getUserById(id);
         return userFromDB.map(user -> new ResponseEntity<>(user, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
@@ -43,19 +42,19 @@ public class UserController {
         return new ResponseEntity<>(userService.createUser(userCreateDto) ? HttpStatus.CREATED : HttpStatus.CONFLICT);
     }
 
-    @PutMapping("/new_username/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<HttpStatus> updateUsername(@RequestBody UserUpdateName userUpdateName,
                                                      @PathVariable("id") Long id) {
-        return new ResponseEntity<>(userService.updateUserName(userUpdateName, id)
+        return new ResponseEntity<>(userService.updateUsername(userUpdateName, id)
                 ? HttpStatus.NO_CONTENT : HttpStatus.CONFLICT);
     }
 
-    @PutMapping("/new_password/{id}")
+    /*@PutMapping("/new_password/{id}")
     public ResponseEntity<HttpStatus> updateUserPassword(@RequestBody UserUpdatePassword userUpdatePassword,
                                                          @PathVariable("id") Long id) {
         return new ResponseEntity<>(userService.updatePassword(userUpdatePassword, id)
                 ? HttpStatus.NO_CONTENT : HttpStatus.CONFLICT);
-    }
+    }*/
 
     @DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteUser(@PathVariable("id") Long id) {

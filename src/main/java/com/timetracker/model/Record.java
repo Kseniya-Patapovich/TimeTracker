@@ -31,7 +31,7 @@ public class Record {
 
     @ManyToOne
     @JoinColumn(name = "users_id", nullable = false)
-    private User user;
+    private Users user;
 
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)

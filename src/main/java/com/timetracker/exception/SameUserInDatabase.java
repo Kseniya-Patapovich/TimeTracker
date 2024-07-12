@@ -1,6 +1,5 @@
 package com.timetracker.exception;
-
-public class SameUserInDatabase extends RuntimeException{
+public class SameUserInDatabase extends RuntimeException {
     String message;
 
     public SameUserInDatabase(String message) {
