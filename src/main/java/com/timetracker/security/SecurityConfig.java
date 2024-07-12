@@ -2,24 +2,15 @@ package com.timetracker.security;
 
 import com.timetracker.model.Roles;
 import com.timetracker.security.filter.JwtFilter;
-import com.timetracker.security.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractAuthenticationFilterConfigurer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -54,6 +45,8 @@ public class SecurityConfig {
                         .requestMatchers(new AntPathRequestMatcher("/record/stop/**", "PUT")).hasRole(Roles.USER.toString())
                         .requestMatchers(new AntPathRequestMatcher("/record/totalTime/**", "GET")).hasRole(Roles.USER.toString())
                         .requestMatchers(new AntPathRequestMatcher("/record/**", "GET")).hasRole(Roles.USER.toString())
+                        .requestMatchers(new AntPathRequestMatcher("/project", "GET")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/project", "POST")).hasRole(Roles.ADMIN.toString())
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

@@ -1,5 +1,7 @@
 package com.timetracker.service;
 
+import com.timetracker.model.Project;
+import com.timetracker.model.ProjectStatus;
 import com.timetracker.model.Record;
 import com.timetracker.repository.ProjectRepository;
 import com.timetracker.repository.RecordRepository;
@@ -11,6 +13,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.Temporal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -37,8 +40,10 @@ public class RecordService {
         if (userRepository.findById(userId).isPresent()) {
             record.setUser(userRepository.findById(userId).get());
         }
-        if (projectRepository.findById(projectId).isPresent()) {
-            record.setProject(projectRepository.findById(projectId).get());
+        Optional<Project> project = projectRepository.findById(projectId);
+        if (project.isPresent()) {
+            record.setProject(project.get());
+            project.get().setProjectStatus(ProjectStatus.IN_PROCESS);
         }
         record.setStartTime(LocalDateTime.now());
         recordRepository.save(record);
@@ -50,7 +55,11 @@ public class RecordService {
         if (recordOptional.isPresent()) {
             Record record = recordOptional.get();
             record.setEndTime(LocalDateTime.now());
-            record.setTotalTime((double) Duration.between((Temporal) record.getStartTime(), (Temporal) record.getEndTime()).toHours());
+            record.setTotalTime((double) Duration.between(record.getStartTime(), record.getEndTime()).toHours());
+            /*Project project = record.getProject();
+            if (Objects.equals(project.getDeadline(), record.getEndTime())) {
+                project.setProjectStatus(ProjectStatus.COMPLETED);
+            }*/
             Record endTracking = recordRepository.saveAndFlush(record);
             return record.equals(endTracking);
         }
