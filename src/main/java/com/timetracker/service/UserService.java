@@ -3,7 +3,9 @@ package com.timetracker.service;
 import com.timetracker.model.Roles;
 import com.timetracker.model.Users;
 import com.timetracker.model.dto.UserCreateDto;
-import com.timetracker.model.dto.UserUpdateName;
+import com.timetracker.model.dto.UserUpdateLoginDto;
+import com.timetracker.model.dto.UserUpdateNameDto;
+import com.timetracker.model.dto.UserUpdatePasswordDto;
 import com.timetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,13 +38,35 @@ public class UserService {
         return getUserById(createdUser.getId()).isPresent();
     }
 
-    public Boolean updateUsername(UserUpdateName userUpdateName, Long userId) {
+    public Boolean updateUsername(UserUpdateNameDto userUpdateName, Long userId) {
         Optional<Users> userFromDb = userRepository.findById(userId);
         if (userFromDb.isPresent()) {
             Users user = userFromDb.get();
             user.setUsername(userUpdateName.getUsername());
             Users updatedUser = userRepository.saveAndFlush(user);
             return user.equals(updatedUser);
+        }
+        return false;
+    }
+
+    public Boolean updatePassword(UserUpdatePasswordDto userUpdatePasswordDto, Long id) {
+        Optional<Users> userFromDb = userRepository.findById(id);
+        if (userFromDb.isPresent()) {
+            Users user = userFromDb.get();
+            user.setPassword(userUpdatePasswordDto.getPassword());
+            Users updateUser = userRepository.saveAndFlush(user);
+            return user.equals(updateUser);
+        }
+        return false;
+    }
+
+    public Boolean updateLogin(UserUpdateLoginDto userUpdateLoginDto, Long id) {
+        Optional<Users> userFromDb = userRepository.findById(id);
+        if (userFromDb.isPresent()) {
+            Users user = userFromDb.get();
+            user.setLogin(userUpdateLoginDto.getLogin());
+            Users updateUser = userRepository.saveAndFlush(user);
+            return user.equals(updateUser);
         }
         return false;
     }

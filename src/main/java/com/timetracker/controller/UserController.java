@@ -2,7 +2,9 @@ package com.timetracker.controller;
 
 import com.timetracker.model.Users;
 import com.timetracker.model.dto.UserCreateDto;
-import com.timetracker.model.dto.UserUpdateName;
+import com.timetracker.model.dto.UserUpdateLoginDto;
+import com.timetracker.model.dto.UserUpdateNameDto;
+import com.timetracker.model.dto.UserUpdatePasswordDto;
 import com.timetracker.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -42,19 +44,26 @@ public class UserController {
         return new ResponseEntity<>(userService.createUser(userCreateDto) ? HttpStatus.CREATED : HttpStatus.CONFLICT);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<HttpStatus> updateUsername(@RequestBody UserUpdateName userUpdateName,
+    @PutMapping("/new_username/{id}")
+    public ResponseEntity<HttpStatus> updateUsername(@RequestBody UserUpdateNameDto userUpdateName,
                                                      @PathVariable("id") Long id) {
         return new ResponseEntity<>(userService.updateUsername(userUpdateName, id)
                 ? HttpStatus.NO_CONTENT : HttpStatus.CONFLICT);
     }
 
-    /*@PutMapping("/new_password/{id}")
-    public ResponseEntity<HttpStatus> updateUserPassword(@RequestBody UserUpdatePassword userUpdatePassword,
+    @PutMapping("/new_password/{id}")
+    public ResponseEntity<HttpStatus> updateUserPassword(@RequestBody UserUpdatePasswordDto userUpdatePassword,
                                                          @PathVariable("id") Long id) {
         return new ResponseEntity<>(userService.updatePassword(userUpdatePassword, id)
                 ? HttpStatus.NO_CONTENT : HttpStatus.CONFLICT);
-    }*/
+    }
+
+    @PutMapping("/new_login/{id}")
+    public ResponseEntity<HttpStatus> updateLogin(@RequestBody UserUpdateLoginDto userUpdateLoginDto,
+                                                  @PathVariable("id") Long id) {
+        return new ResponseEntity<>(userService.updateLogin(userUpdateLoginDto, id)
+                ? HttpStatus.NO_CONTENT : HttpStatus.CONFLICT);
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteUser(@PathVariable("id") Long id) {
