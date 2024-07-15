@@ -1,22 +1,18 @@
 package com.timetracker.service;
 
-import com.timetracker.exception.BlockedUserException;
-import com.timetracker.exception.LogTimeException;
-import com.timetracker.exception.ProjectIsDoneException;
-import com.timetracker.exception.ProjectIsNotInProgressException;
-import com.timetracker.exception.ProjectNotFoundException;
-import com.timetracker.exception.UserNotFoundException;
 import com.timetracker.model.Project;
 import com.timetracker.model.Users;
-import com.timetracker.model.dto.RecordCreateDto;
-import com.timetracker.model.dto.RecordUpdateDto;
+import com.timetracker.model.dto.RecordDto;
 import com.timetracker.model.enums.ProjectStatus;
 import com.timetracker.model.Record;
 import com.timetracker.repository.ProjectRepository;
 import com.timetracker.repository.RecordRepository;
 import com.timetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,10 +40,10 @@ public class RecordService {
             if (user.getLocked()) {
                 return recordRepository.findAllByUserId(id);
             } else {
-                throw new BlockedUserException(user.getId().toString());
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + id + " is blocked!");
             }
         } else {
-            throw new UserNotFoundException(id.toString());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + id + " not found!");
         }
     }
 
@@ -56,11 +52,12 @@ public class RecordService {
         if (projectFromDb.isPresent()) {
             return recordRepository.findAllByProjectId(id);
         } else {
-            throw new ProjectIsDoneException(id.toString());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Project with id=" + id + " not found!");
         }
     }
 
-    public Long createRecord(RecordCreateDto recordCreateDto) {
+    @Transactional
+    public Long createRecord(RecordDto recordCreateDto) {
         Record record = new Record();
         record.setRecordDate(LocalDateTime.now());
         Optional<Users> usersOptional = userRepository.findById(recordCreateDto.getUserId());
@@ -69,10 +66,10 @@ public class RecordService {
             if (!user.getLocked()) {
                 record.setUser(user);
             } else {
-                throw new BlockedUserException(user.getId().toString());
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + recordCreateDto.getUserId() + " is blocked!");
             }
         } else {
-            throw new UserNotFoundException(recordCreateDto.getUserId().toString());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + recordCreateDto.getUserId() + " not found!");
         }
         Optional<Project> projectOptional = projectRepository.findById(recordCreateDto.getProjectId());
         if (projectOptional.isPresent()) {
@@ -81,38 +78,40 @@ public class RecordService {
                 record.setProject(project);
                 project.setProjectStatus(ProjectStatus.IN_PROGRESS);
             } else {
-                throw new ProjectIsDoneException(project.getProjectStatus().name());
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + recordCreateDto.getProjectId() + " is in wrong status!");
             }
         } else {
-            throw new ProjectNotFoundException(recordCreateDto.getProjectId().toString());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Project with id=" + recordCreateDto.getProjectId() + " not found!");
         }
         record.setSpent(recordCreateDto.getTime());
         Record createdRecord = recordRepository.save(record);
         return createdRecord.getId();
     }
 
-    public void logTime(Long userId, Long projectId, RecordUpdateDto recordUpdateDto) {
-        Optional<Project> projectFromDb = projectRepository.findById(projectId);
+    @Transactional
+    public void logTime(RecordDto recordDto) {
+        Optional<Project> projectFromDb = projectRepository.findById(recordDto.getProjectId());
         if (projectFromDb.isEmpty()) {
-            throw new ProjectNotFoundException(projectId.toString());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Project with id=" + recordDto.getProjectId() + " not found!");
+
         }
         Project project = projectFromDb.get();
         if (project.getProjectStatus() != ProjectStatus.IN_PROGRESS) {
-            throw new ProjectIsNotInProgressException(projectId.toString());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + recordDto.getProjectId() + " is in wrong status!");
         }
-        Optional<Users> userFromDb = userRepository.findById(userId);
+        Optional<Users> userFromDb = userRepository.findById(recordDto.getUserId());
         if (userFromDb.isEmpty()) {
-            throw new UserNotFoundException(userId.toString());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + recordDto.getUserId() + " not found!");
         }
         Users user = userFromDb.get();
         if (user.getLocked()) {
-            throw new BlockedUserException(userId.toString());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + recordDto.getUserId() + " is blocked!");
         }
-        Record record = recordRepository.findByUserIdAndProjectId(userId, projectId);
-        if (record.getSpent() + recordUpdateDto.getTime() > 12 * 60) {
-            throw new LogTimeException(record.getSpent().toString());
+        Record record = recordRepository.findByUserIdAndProjectId(recordDto.getUserId(), recordDto.getProjectId());
+        if (record.getSpent() + recordDto.getTime() > 12 * 60) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Today is the time for logs completed!");
         }
-        record.setSpent(record.getSpent() + recordUpdateDto.getTime());
-        recordRepository.saveAndFlush(record);
+        record.setSpent(record.getSpent() + recordDto.getTime());
+        recordRepository.save(record);
     }
 }
