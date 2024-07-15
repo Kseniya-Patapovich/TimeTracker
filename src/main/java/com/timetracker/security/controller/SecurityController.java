@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/security")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class SecurityController {
     private final SecurityService securityService;
@@ -27,7 +27,7 @@ public class SecurityController {
         return token.map(s -> new ResponseEntity<>(new AuthResponseDto(s), HttpStatus.CREATED)).orElseGet(() -> new ResponseEntity<>(HttpStatus.UNAUTHORIZED));
     }
 
-    @PostMapping("/registration")
+    @PostMapping("/admin")
     public ResponseEntity<HttpStatus> registration(@RequestBody RegistrationDto registrationDto) {
         securityService.registration(registrationDto);
         return new ResponseEntity<>(HttpStatus.CREATED);

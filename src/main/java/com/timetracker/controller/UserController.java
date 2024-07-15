@@ -2,8 +2,6 @@ package com.timetracker.controller;
 
 import com.timetracker.model.Users;
 import com.timetracker.model.dto.UserCreateDto;
-import com.timetracker.model.dto.UserUpdateLoginDto;
-import com.timetracker.model.dto.UserUpdateNameDto;
 import com.timetracker.model.dto.UserUpdatePasswordDto;
 import com.timetracker.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -27,9 +26,22 @@ import java.util.Optional;
 public class UserController {
     private final UserService userService;
 
+    @GetMapping("/all")
+    @ResponseStatus(HttpStatus.OK)
+    public List<Users> getAllUsersAndAdmins() {
+        return userService.getAllUsersAndAdmins();
+    }
+
     @GetMapping
-    public ResponseEntity<List<Users>> getAllUsers() {
-        return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
+    @ResponseStatus(HttpStatus.OK)
+    public List<Users> getAllUsers() {
+        return userService.getAllUsers();
+    }
+
+    @GetMapping("/admins")
+    @ResponseStatus(HttpStatus.OK)
+    public List<Users> getAllAdmins() {
+        return userService.getAllAdmins();
     }
 
     @GetMapping("/{id}")
@@ -40,15 +52,9 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<HttpStatus> createUser(@RequestBody UserCreateDto userCreateDto) {
-        return new ResponseEntity<>(userService.createUser(userCreateDto) ? HttpStatus.CREATED : HttpStatus.CONFLICT);
-    }
-
-    @PutMapping("/new_username/{id}")
-    public ResponseEntity<HttpStatus> updateUsername(@RequestBody UserUpdateNameDto userUpdateName,
-                                                     @PathVariable("id") Long id) {
-        return new ResponseEntity<>(userService.updateUsername(userUpdateName, id)
-                ? HttpStatus.NO_CONTENT : HttpStatus.CONFLICT);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Long createUser(@RequestBody UserCreateDto userCreateDto) {
+        return userService.createUser(userCreateDto);
     }
 
     @PutMapping("/new_password/{id}")
@@ -58,15 +64,39 @@ public class UserController {
                 ? HttpStatus.NO_CONTENT : HttpStatus.CONFLICT);
     }
 
-    @PutMapping("/new_login/{id}")
-    public ResponseEntity<HttpStatus> updateLogin(@RequestBody UserUpdateLoginDto userUpdateLoginDto,
-                                                  @PathVariable("id") Long id) {
-        return new ResponseEntity<>(userService.updateLogin(userUpdateLoginDto, id)
-                ? HttpStatus.NO_CONTENT : HttpStatus.CONFLICT);
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateRole(@PathVariable Long id) {
+        userService.updateRole(id);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteUser(@PathVariable("id") Long id) {
-        return new ResponseEntity<>(userService.deleteUser(id) ? HttpStatus.NO_CONTENT : HttpStatus.CONFLICT);
+        return new ResponseEntity<>(userService.deleteUser(id)
+                ? HttpStatus.NO_CONTENT : HttpStatus.CONFLICT);
+    }
+
+    @PutMapping("/block/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void blockUser(@PathVariable Long id) {
+        userService.blockUser(id);
+    }
+
+    @PutMapping("/unblock/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unblockUser(@PathVariable Long id) {
+        userService.unblockUser(id);
+    }
+
+    @PutMapping("/blockAdmin/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void blockAdmin(@PathVariable Long id) {
+        userService.blockAdmin(id);
+    }
+
+    @PutMapping("/unblockAdmin/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unblockAdmin(@PathVariable Long id) {
+        userService.unblockAdmin(id);
     }
 }

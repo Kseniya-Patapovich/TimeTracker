@@ -1,39 +1,34 @@
 package com.timetracker.model;
 
+import com.timetracker.model.enums.ProjectStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotNull;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Entity(name = "project")
 public class Project {
 
     @Id
-    @SequenceGenerator(name = "projectSeqGen", sequenceName = "project_seq_gen", allocationSize = 1)
-    @GeneratedValue(generator = "projectSeqGen")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false)
-    private String name;
+    @Column(nullable = false)
+    private String projectName;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(nullable = false, name = "status")
     private ProjectStatus projectStatus;
 
-    @Column(name = "deadline")
-    //@Temporal(TemporalType.TIME)
-    @Future
-    @NotNull
-    private LocalDateTime deadline;
+    @ManyToMany(mappedBy = "projects")
+    private List<Users> users;
 }

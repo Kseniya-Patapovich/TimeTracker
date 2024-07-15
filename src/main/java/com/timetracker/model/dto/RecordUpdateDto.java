@@ -5,6 +5,6 @@ import org.springframework.stereotype.Component;
 
 @Data
 @Component
-public class UserUpdateNameDto {
-    private String username;
+public class RecordUpdateDto {
+    private int time;
 }

@@ -1,18 +1,15 @@
 package com.timetracker.security.service;
 
 import com.timetracker.exception.SameUserInDatabase;
-import com.timetracker.model.Roles;
+import com.timetracker.model.enums.Roles;
 import com.timetracker.model.Users;
 import com.timetracker.repository.UserRepository;
-import com.timetracker.security.filter.JwtFilter;
 import com.timetracker.security.model.AuthRequestDto;
 import com.timetracker.security.model.RegistrationDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -36,7 +33,7 @@ public class SecurityService {
             throw new SameUserInDatabase(registrationDto.getLogin());
         }
         Users user = new Users();
-        user.setUsername(registrationDto.getUsername());
+        user.setFullName(registrationDto.getUsername());
         user.setLogin(registrationDto.getLogin());
         user.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
         user.setRole(Roles.ADMIN);

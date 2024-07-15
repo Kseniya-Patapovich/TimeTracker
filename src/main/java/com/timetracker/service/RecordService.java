@@ -1,7 +1,16 @@
 package com.timetracker.service;
 
+import com.timetracker.exception.BlockedUserException;
+import com.timetracker.exception.LogTimeException;
+import com.timetracker.exception.ProjectIsDoneException;
+import com.timetracker.exception.ProjectIsNotInProgressException;
+import com.timetracker.exception.ProjectNotFoundException;
+import com.timetracker.exception.UserNotFoundException;
 import com.timetracker.model.Project;
-import com.timetracker.model.ProjectStatus;
+import com.timetracker.model.Users;
+import com.timetracker.model.dto.RecordCreateDto;
+import com.timetracker.model.dto.RecordUpdateDto;
+import com.timetracker.model.enums.ProjectStatus;
 import com.timetracker.model.Record;
 import com.timetracker.repository.ProjectRepository;
 import com.timetracker.repository.RecordRepository;
@@ -9,11 +18,8 @@ import com.timetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.Temporal;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -32,45 +38,81 @@ public class RecordService {
     }
 
     public List<Record> getRecordByUserId(Long id) {
-        return recordRepository.findAllByUserId(id);
+        Optional<Users> userFromDb = userRepository.findById(id);
+        if (userFromDb.isPresent()) {
+            Users user = userFromDb.get();
+            if (user.getLocked()) {
+                return recordRepository.findAllByUserId(id);
+            } else {
+                throw new BlockedUserException(user.getId().toString());
+            }
+        } else {
+            throw new UserNotFoundException(id.toString());
+        }
     }
 
-    public Boolean startTracking(Long userId, Long projectId) {
+    public List<Record> getRecordsByProjectId(Long id) {
+        Optional<Project> projectFromDb = projectRepository.findById(id);
+        if (projectFromDb.isPresent()) {
+            return recordRepository.findAllByProjectId(id);
+        } else {
+            throw new ProjectIsDoneException(id.toString());
+        }
+    }
+
+    public Long createRecord(RecordCreateDto recordCreateDto) {
         Record record = new Record();
-        if (userRepository.findById(userId).isPresent()) {
-            record.setUser(userRepository.findById(userId).get());
+        record.setRecordDate(LocalDateTime.now());
+        Optional<Users> usersOptional = userRepository.findById(recordCreateDto.getUserId());
+        if (usersOptional.isPresent()) {
+            Users user = usersOptional.get();
+            if (!user.getLocked()) {
+                record.setUser(user);
+            } else {
+                throw new BlockedUserException(user.getId().toString());
+            }
+        } else {
+            throw new UserNotFoundException(recordCreateDto.getUserId().toString());
         }
-        Optional<Project> project = projectRepository.findById(projectId);
-        if (project.isPresent()) {
-            record.setProject(project.get());
-            project.get().setProjectStatus(ProjectStatus.IN_PROCESS);
+        Optional<Project> projectOptional = projectRepository.findById(recordCreateDto.getProjectId());
+        if (projectOptional.isPresent()) {
+            Project project = projectOptional.get();
+            if (project.getProjectStatus() != ProjectStatus.DONE) {
+                record.setProject(project);
+                project.setProjectStatus(ProjectStatus.IN_PROGRESS);
+            } else {
+                throw new ProjectIsDoneException(project.getProjectStatus().name());
+            }
+        } else {
+            throw new ProjectNotFoundException(recordCreateDto.getProjectId().toString());
         }
-        record.setStartTime(LocalDateTime.now());
-        recordRepository.save(record);
-        return getRecordById(record.getId()).isPresent();
+        record.setSpent(recordCreateDto.getTime());
+        Record createdRecord = recordRepository.save(record);
+        return createdRecord.getId();
     }
 
-    public Boolean stopTracking(Long recordId) {
-        Optional<Record> recordOptional = getRecordById(recordId);
-        if (recordOptional.isPresent()) {
-            Record record = recordOptional.get();
-            record.setEndTime(LocalDateTime.now());
-            record.setTotalTime((double) Duration.between(record.getStartTime(), record.getEndTime()).toHours());
-            /*Project project = record.getProject();
-            if (Objects.equals(project.getDeadline(), record.getEndTime())) {
-                project.setProjectStatus(ProjectStatus.COMPLETED);
-            }*/
-            Record endTracking = recordRepository.saveAndFlush(record);
-            return record.equals(endTracking);
+    public void logTime(Long userId, Long projectId, RecordUpdateDto recordUpdateDto) {
+        Optional<Project> projectFromDb = projectRepository.findById(projectId);
+        if (projectFromDb.isEmpty()) {
+            throw new ProjectNotFoundException(projectId.toString());
         }
-        return false;
-    }
-
-    public Double getTotalTime(Long recordId) {
-        Optional<Record> recordOptional = recordRepository.findById(recordId);
-        if (recordOptional.isPresent()) {
-            return recordOptional.get().getTotalTime();
+        Project project = projectFromDb.get();
+        if (project.getProjectStatus() != ProjectStatus.IN_PROGRESS) {
+            throw new ProjectIsNotInProgressException(projectId.toString());
         }
-        return (double) Duration.ZERO.toHours();
+        Optional<Users> userFromDb = userRepository.findById(userId);
+        if (userFromDb.isEmpty()) {
+            throw new UserNotFoundException(userId.toString());
+        }
+        Users user = userFromDb.get();
+        if (user.getLocked()) {
+            throw new BlockedUserException(userId.toString());
+        }
+        Record record = recordRepository.findByUserIdAndProjectId(userId, projectId);
+        if (record.getSpent() + recordUpdateDto.getTime() > 12 * 60) {
+            throw new LogTimeException(record.getSpent().toString());
+        }
+        record.setSpent(record.getSpent() + recordUpdateDto.getTime());
+        recordRepository.saveAndFlush(record);
     }
 }

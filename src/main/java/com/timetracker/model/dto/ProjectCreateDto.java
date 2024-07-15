@@ -10,9 +10,5 @@ import java.time.LocalDateTime;
 @Data
 @Component
 public class ProjectCreateDto {
-    private String name;
-
-    @Future
-    @NotNull
-    private LocalDateTime deadline;
+    private String projectName;
 }

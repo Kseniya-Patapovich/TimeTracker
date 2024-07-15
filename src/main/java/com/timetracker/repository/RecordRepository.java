@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface RecordRepository extends JpaRepository<Record, Long> {
     List<Record> findAllByUserId(Long id);
+    List<Record> findAllByProjectId(Long id);
+    Record findByUserIdAndProjectId(Long userId, Long projectId);
 }

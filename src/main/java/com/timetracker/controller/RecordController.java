@@ -1,6 +1,8 @@
 package com.timetracker.controller;
 
 import com.timetracker.model.Record;
+import com.timetracker.model.dto.RecordCreateDto;
+import com.timetracker.model.dto.RecordUpdateDto;
 import com.timetracker.service.RecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,33 +13,55 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/record")
+@RequestMapping("/records")
 @RequiredArgsConstructor
 public class RecordController {
     private final RecordService recordService;
 
-    @PostMapping("/start/{userId}/{projectId}")
-    public ResponseEntity<HttpStatus> start(@PathVariable("userId") Long userId, @PathVariable("projectId") Long projectId) {
-        return new ResponseEntity<>(recordService.startTracking(userId, projectId) ? HttpStatus.CREATED : HttpStatus.CONFLICT);
-    }
-
-    @PutMapping("/stop/{id}")
-    public ResponseEntity<HttpStatus> stop(@PathVariable("id") Long id) {
-        return new ResponseEntity<>(recordService.stopTracking(id) ? HttpStatus.NO_CONTENT : HttpStatus.CONFLICT);
-    }
-
-    @GetMapping("/totalTime/{id}")
-    public ResponseEntity<Double> getTotalTime(@PathVariable("id") Long id) {
-        return new ResponseEntity<>(recordService.getTotalTime(id), HttpStatus.OK);
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<Record> getAllRecords() {
+        return recordService.getAllRecord();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<List<Record>> getRecordByUserId(@PathVariable("id") Long id) {
-        return new ResponseEntity<>(recordService.getRecordByUserId(id), HttpStatus.OK);
+    public ResponseEntity<Record> getRecordBuId(@PathVariable Long id) {
+        Optional<Record> recordFromDb = recordService.getRecordById(id);
+        return recordFromDb.map(record -> new ResponseEntity<>(record, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @GetMapping("/project")
+    @ResponseStatus(HttpStatus.OK)
+    public List<Record> getRecordsByProjectId(@RequestParam("id") Long id) {
+        return recordService.getRecordsByProjectId(id);
+    }
+
+    @GetMapping("/user")
+    @ResponseStatus(HttpStatus.OK)
+    public List<Record> getRecordByUserId(@RequestParam("id") Long id) {
+        return recordService.getRecordByUserId(id);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Long createRecord(@RequestBody RecordCreateDto recordCreateDto) {
+        return recordService.createRecord(recordCreateDto);
+    }
+
+    @PutMapping()
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logTime(@RequestParam("userId") Long userId,
+                             @RequestParam("projectId") Long projectId,
+                             @RequestBody RecordUpdateDto recordUpdateDto) {
+        recordService.logTime(userId, projectId, recordUpdateDto);
     }
 }

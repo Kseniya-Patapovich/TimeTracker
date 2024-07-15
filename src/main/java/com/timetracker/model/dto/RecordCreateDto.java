@@ -4,9 +4,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.stereotype.Component;
 
+import java.sql.Date;
+
 @Data
 @Component
-public class UserUpdatePasswordDto {
-    @NotNull
-    private String password;
+public class RecordCreateDto {
+    private Long userId;
+    private Long projectId;
+    private Integer time;
 }
