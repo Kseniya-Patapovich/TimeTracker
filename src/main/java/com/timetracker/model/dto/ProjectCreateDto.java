@@ -1,14 +1,12 @@
 package com.timetracker.model.dto;
 
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-@Component
 public class ProjectCreateDto {
     private String projectName;
+    private List<Long> usersId;
 }

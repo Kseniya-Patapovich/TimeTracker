@@ -1,7 +1,7 @@
 package com.timetracker.repository;
 
-import com.timetracker.model.Users;
-import com.timetracker.model.enums.Roles;
+import com.timetracker.model.UserTimeTracker;
+import com.timetracker.model.enums.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,8 +9,8 @@ import java.util.Optional;
 import java.util.List;
 
 @Repository
-public interface UserRepository extends JpaRepository<Users, Long> {
-    Optional<Users> findByLogin(String login);
-    List<Users> findByRole(Roles role);
-    Optional<Users> findByFullName(String fullName);
+public interface UserRepository extends JpaRepository<UserTimeTracker, Long> {
+    Optional<UserTimeTracker> findByLogin(String login);
+    List<UserTimeTracker> findByRole(Role role);
+    Optional<UserTimeTracker> findByFullName(String fullName);
 }

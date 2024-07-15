@@ -1,7 +1,7 @@
 package com.timetracker.service;
 
 import com.timetracker.model.Project;
-import com.timetracker.model.Users;
+import com.timetracker.model.UserTimeTracker;
 import com.timetracker.model.dto.RecordDto;
 import com.timetracker.model.enums.ProjectStatus;
 import com.timetracker.model.Record;
@@ -34,9 +34,9 @@ public class RecordService {
     }
 
     public List<Record> getRecordByUserId(Long id) {
-        Optional<Users> userFromDb = userRepository.findById(id);
+        Optional<UserTimeTracker> userFromDb = userRepository.findById(id);
         if (userFromDb.isPresent()) {
-            Users user = userFromDb.get();
+            UserTimeTracker user = userFromDb.get();
             if (user.getLocked()) {
                 return recordRepository.findAllByUserId(id);
             } else {
@@ -60,9 +60,9 @@ public class RecordService {
     public Long createRecord(RecordDto recordCreateDto) {
         Record record = new Record();
         record.setRecordDate(LocalDateTime.now());
-        Optional<Users> usersOptional = userRepository.findById(recordCreateDto.getUserId());
+        Optional<UserTimeTracker> usersOptional = userRepository.findById(recordCreateDto.getUserId());
         if (usersOptional.isPresent()) {
-            Users user = usersOptional.get();
+            UserTimeTracker user = usersOptional.get();
             if (!user.getLocked()) {
                 record.setUser(user);
             } else {
@@ -99,11 +99,11 @@ public class RecordService {
         if (project.getProjectStatus() != ProjectStatus.IN_PROGRESS) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + recordDto.getProjectId() + " is in wrong status!");
         }
-        Optional<Users> userFromDb = userRepository.findById(recordDto.getUserId());
+        Optional<UserTimeTracker> userFromDb = userRepository.findById(recordDto.getUserId());
         if (userFromDb.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + recordDto.getUserId() + " not found!");
         }
-        Users user = userFromDb.get();
+        UserTimeTracker user = userFromDb.get();
         if (user.getLocked()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + recordDto.getUserId() + " is blocked!");
         }

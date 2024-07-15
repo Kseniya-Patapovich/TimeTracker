@@ -1,4 +1,4 @@
-package com.timetracker.security.filter;
+package com.timetracker.security;
 
 import com.timetracker.security.CustomUserDetailsService;
 import com.timetracker.security.JwtUtils;

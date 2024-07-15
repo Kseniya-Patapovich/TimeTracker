@@ -1,11 +1,14 @@
 package com.timetracker.security;
 
-import com.timetracker.model.enums.Roles;
-import com.timetracker.security.filter.JwtFilter;
+import com.timetracker.model.enums.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.BeanIds;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,10 +24,24 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final CustomUserDetailsService customUserDetailsService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(customUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
     }
 
     @Bean
@@ -32,34 +49,27 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/auth/token").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/admin").hasRole(Roles.SUPER_ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/users").hasAnyRole(Roles.ADMIN.name(), Roles.SUPER_ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/users/all").hasRole(Roles.SUPER_ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/users/admins").hasRole(Roles.SUPER_ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/users/**").hasAnyRole(Roles.ADMIN.name(), Roles.SUPER_ADMIN.name())
-                        .requestMatchers(HttpMethod.POST, "/users").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.PUT, "/users/new_password/**").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.PUT, "/users/**").hasRole(Roles.SUPER_ADMIN.name())
-                        .requestMatchers(HttpMethod.PUT, "/users/block/**").hasAnyRole(Roles.ADMIN.name(), Roles.SUPER_ADMIN.name())
-                        .requestMatchers(HttpMethod.PUT, "/users/unblocked/**").hasAnyRole(Roles.ADMIN.name(), Roles.SUPER_ADMIN.name())
-                        .requestMatchers(HttpMethod.PUT, "/users/blockAdmin/**").hasRole(Roles.SUPER_ADMIN.name())
-                        .requestMatchers(HttpMethod.PUT, "/users/unblockAdmin/**").hasRole(Roles.SUPER_ADMIN.name())
-                        .requestMatchers(HttpMethod.DELETE, "/users/**").hasAnyRole(Roles.ADMIN.name(), Roles.SUPER_ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/projects").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/projects/**").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/projects/by_user/**").hasAnyRole(Roles.ADMIN.name(), Roles.USER.name())
-                        .requestMatchers(HttpMethod.GET, "/projects/users/**").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.POST,"/projects").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.PUT, "/projects").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.PUT, "/projects/**").hasRole(Roles.USER.name())
-                        .requestMatchers(HttpMethod.DELETE, "/projects/**").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET,"/records").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/records/**").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/records/project").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/records/user").hasRole(Roles.ADMIN.name())
-                        .requestMatchers(HttpMethod.POST, "/records").hasRole(Roles.USER.name())
-                        .requestMatchers(HttpMethod.PUT, "/records").hasRole(Roles.USER.name())
+                        .requestMatchers(HttpMethod.POST, "/auth").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/users/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/users/projects/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/users").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.PUT, "/users/changePassword/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.PUT, "/users/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE, "/users/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/projects").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/projects/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/projects/user/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/projects").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.PUT, "/projects/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.PUT, "/projects/changeStatus").hasAnyAuthority(Role.USER.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE, "/projects/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/records").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/records/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/records/project/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/records/user/**").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/records").hasAuthority(Role.USER.name())
+                        .requestMatchers(HttpMethod.PUT, "/records").hasAuthority(Role.USER.name())
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

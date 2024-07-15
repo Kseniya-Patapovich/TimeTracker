@@ -1,7 +1,7 @@
 package com.timetracker.service;
 
 import com.timetracker.model.Project;
-import com.timetracker.model.Users;
+import com.timetracker.model.UserTimeTracker;
 import com.timetracker.model.dto.ProjectCreateDto;
 import com.timetracker.model.enums.ProjectStatus;
 import com.timetracker.repository.ProjectRepository;
@@ -30,9 +30,9 @@ public class ProjectService {
     }
 
     public List<Project> getAllByUserId(Long id) {
-        Optional<Users> userFromDb = userRepository.findById(id);
+        Optional<UserTimeTracker> userFromDb = userRepository.findById(id);
         if (userFromDb.isPresent()) {
-            Users user = userFromDb.get();
+            UserTimeTracker user = userFromDb.get();
             return user.getProjects();
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + id + " not found!");
@@ -44,6 +44,8 @@ public class ProjectService {
         Project project = new Project();
         project.setProjectName(projectCreateDto.getProjectName());
         project.setProjectStatus(ProjectStatus.DRAFT);
+        List<UserTimeTracker> users = userRepository.findAllById(projectCreateDto.getUsersId());
+        project.setUsers(users);
         Project createdProject = projectRepository.save(project);
         return createdProject.getId();
     }
@@ -67,9 +69,9 @@ public class ProjectService {
         Optional<Project> projectFromDb = projectRepository.findById(projectId);
         if (projectFromDb.isPresent()) {
             Project project = projectFromDb.get();
-            Optional<Users> userFromDb = userRepository.findById(userId);
+            Optional<UserTimeTracker> userFromDb = userRepository.findById(userId);
             if (userFromDb.isPresent()) {
-                Users user = userFromDb.get();
+                UserTimeTracker user = userFromDb.get();
                 if (user.getLocked()) {
                     project.getUsers().add(user);
                     user.getProjects().add(project);

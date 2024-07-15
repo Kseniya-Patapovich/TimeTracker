@@ -52,7 +52,7 @@ public class ProjectController {
         projectService.addUserToProject(projectId, userId);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/changeStatus/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changeProjectStatus(@PathVariable Long id, @RequestBody ProjectStatus projectStatus) {
         projectService.updateProjectStatus(id, projectStatus);

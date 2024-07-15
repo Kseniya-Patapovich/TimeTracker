@@ -1,6 +1,6 @@
 package com.timetracker.model;
 
-import com.timetracker.model.enums.Roles;
+import com.timetracker.model.enums.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,7 +17,7 @@ import java.util.List;
 
 @Data
 @Entity(name = "time_tracker_user")
-public class Users {
+public class UserTimeTracker {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,7 +27,7 @@ public class Users {
 
     @Column(nullable = false, name = "user_role")
     @Enumerated(EnumType.STRING)
-    private Roles role;
+    private Role role;
 
     @Column(nullable = false, unique = true)
     private String login;

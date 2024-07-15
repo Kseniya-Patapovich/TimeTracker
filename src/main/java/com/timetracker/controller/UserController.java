@@ -1,8 +1,8 @@
 package com.timetracker.controller;
 
-import com.timetracker.model.Users;
+import com.timetracker.model.UserTimeTracker;
 import com.timetracker.model.dto.UserCreateDto;
-import com.timetracker.model.enums.Roles;
+import com.timetracker.model.enums.Role;
 import com.timetracker.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,17 +26,17 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public List<Users> getAllUsers() {
+    public List<UserTimeTracker> getAllUsers() {
         return userService.getAllUsers();
     }
 
     @GetMapping("/{id}")
-    public Users getUserById(@PathVariable("id") Long id) {
+    public UserTimeTracker getUserById(@PathVariable("id") Long id) {
         return userService.getUserById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping("/projects/{id}")
-    public List<Users> getUsersByProjectId(@PathVariable Long id) {
+    public List<UserTimeTracker> getUsersByProjectId(@PathVariable Long id) {
         return userService.getUsersByProjectId(id);
     }
 
@@ -53,9 +53,9 @@ public class UserController {
         userService.updatePassword(password, id);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/{role}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateRole(@PathVariable Long id, @RequestBody Roles role) {
+    public void updateRole(@PathVariable Long id, @PathVariable String role) {
         userService.updateRole(id, role);
     }
 

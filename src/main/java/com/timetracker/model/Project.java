@@ -8,7 +8,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import lombok.Data;
 
@@ -30,5 +29,5 @@ public class Project {
     private ProjectStatus projectStatus;
 
     @ManyToMany(mappedBy = "projects")
-    private List<Users> users;
+    private List<UserTimeTracker> users;
 }
