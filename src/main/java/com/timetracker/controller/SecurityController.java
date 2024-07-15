@@ -1,10 +1,9 @@
-package com.timetracker.security.controller;
+package com.timetracker.controller;
 
-import com.timetracker.security.model.AuthRequestDto;
-import com.timetracker.security.model.AuthResponseDto;
-import com.timetracker.security.model.RegistrationDto;
-import com.timetracker.security.service.SecurityService;
-import jakarta.validation.Valid;
+import com.timetracker.security.dto.AuthRequestDto;
+import com.timetracker.security.dto.AuthResponseDto;
+import com.timetracker.security.dto.RegistrationDto;
+import com.timetracker.security.SecurityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

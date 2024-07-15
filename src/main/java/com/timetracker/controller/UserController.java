@@ -2,6 +2,7 @@ package com.timetracker.controller;
 
 import com.timetracker.model.Users;
 import com.timetracker.model.dto.UserCreateDto;
+import com.timetracker.model.enums.Roles;
 import com.timetracker.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -54,8 +55,8 @@ public class UserController {
 
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateRole(@PathVariable Long id) {
-        userService.updateRole(id);
+    public void updateRole(@PathVariable Long id, @RequestBody Roles role) {
+        userService.updateRole(id, role);
     }
 
     @DeleteMapping("/{id}")
@@ -64,9 +65,9 @@ public class UserController {
         userService.deleteUser(id);
     }
 
-    @PutMapping("/block/{id}")
+    @PutMapping("/block/{id}/{locked}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void blockUser(@PathVariable Long id) {
-        userService.blockUser(id);
+    public void blockUser(@PathVariable Long id, @PathVariable boolean locked) {
+        userService.blockUser(id, locked);
     }
 }

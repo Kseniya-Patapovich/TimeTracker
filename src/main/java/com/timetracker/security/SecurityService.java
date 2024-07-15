@@ -1,11 +1,11 @@
-package com.timetracker.security.service;
+package com.timetracker.security;
 
 import com.timetracker.exception.SameUserInDatabase;
 import com.timetracker.model.enums.Roles;
 import com.timetracker.model.Users;
 import com.timetracker.repository.UserRepository;
-import com.timetracker.security.model.AuthRequestDto;
-import com.timetracker.security.model.RegistrationDto;
+import com.timetracker.security.dto.AuthRequestDto;
+import com.timetracker.security.dto.RegistrationDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

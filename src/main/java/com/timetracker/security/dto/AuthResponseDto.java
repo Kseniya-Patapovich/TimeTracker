@@ -1,4 +1,4 @@
-package com.timetracker.security.model;
+package com.timetracker.security.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

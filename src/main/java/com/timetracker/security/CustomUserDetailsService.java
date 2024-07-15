@@ -1,4 +1,4 @@
-package com.timetracker.security.service;
+package com.timetracker.security;
 
 import com.timetracker.model.Users;
 import com.timetracker.repository.UserRepository;

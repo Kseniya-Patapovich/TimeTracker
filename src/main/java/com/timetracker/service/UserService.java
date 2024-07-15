@@ -10,11 +10,14 @@ import com.timetracker.repository.RecordRepository;
 import com.timetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.security.Principal;
 import java.util.Optional;
 import java.util.List;
 
@@ -53,28 +56,34 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(password));
             userRepository.save(user);
         } else {
-            throw new ResponseStatusException(HttpStatus.CONFLICT);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + id + " not found!");
         }
     }
 
     public void deleteUser(Long id) {
         Optional<Users> userCheck = getUserById(id);
         if (userCheck.isEmpty() && recordRepository.existsByUserId(id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + id + "doesn't have records!");
         }
         userRepository.deleteById(id);
     }
 
     @Transactional
-    public void updateRole(Long id) {
-        Optional<Users> userFromDb = userRepository.findById(id);
-        if (userFromDb.isPresent()) {
-            Users user = userFromDb.get();
-            user.setRole(Roles.ADMIN);
-            userRepository.save(user);
-        } else {
-            throw new ResponseStatusException(HttpStatus.CONFLICT);
+    public void updateRole(Long id, Roles role) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String currentUsername = principal instanceof UserDetails ? ((UserDetails) principal).getUsername() : principal.toString();
+        Users currentUser = userRepository.findByFullName(currentUsername)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Current user not found!"));
+        Users userToUpdate = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + id + " not found!"));
+        if (currentUser.getRole() == Roles.ADMIN && userToUpdate.getRole() != Roles.USER) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Admin can only change roles for users with role USER!");
         }
+        if (currentUser.getRole() == Roles.USER) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User cannot change roles!");
+        }
+        userToUpdate.setRole(role);
+        userRepository.save(userToUpdate);
     }
 
     public List<Users> getUsersByProjectId(Long id) {
@@ -91,16 +100,23 @@ public class UserService {
         }
     }
 
-    public void blockUser(Long id) {
-        Optional<Users> userFromDb = userRepository.findById(id);
-        if (userFromDb.isPresent()) {
-            Users user = userFromDb.get();
-            if (user.getLocked() && user.getRole() == Roles.USER) {
-                user.setLocked(true);
-                userRepository.saveAndFlush(user);
-            }
-        } else {
-            throw new UserNotFoundException(id.toString());
+    @Transactional
+    public void blockUser(Long id, boolean locked) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String currentUsername = principal instanceof UserDetails ? ((UserDetails) principal).getUsername() : principal.toString();
+        Users currentUser = userRepository.findByFullName(currentUsername)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Current user not found!"));
+        Users userToUpdate = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + id + " not found!"));
+        Users userToBlock = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + id + " not found!"));
+        if (currentUser.getRole() == Roles.ADMIN && userToUpdate.getRole() != Roles.USER) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Admin can only block/unblock users with role USER!");
         }
+        if (currentUser.getRole() == Roles.USER) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User cannot block/unblock any users");
+        }
+        userToBlock.setLocked(locked);
+        userRepository.save(userToBlock);
     }
 }

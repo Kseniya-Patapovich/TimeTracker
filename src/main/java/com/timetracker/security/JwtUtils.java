@@ -1,4 +1,4 @@
-package com.timetracker.security.service;
+package com.timetracker.security;
 
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
