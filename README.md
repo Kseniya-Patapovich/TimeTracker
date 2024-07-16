@@ -25,7 +25,15 @@ The user has the ability to create new reports and make changes to them.
 The administrator has the ability to create, edit and delete users. Administrators can also create projects, add users to projects, change and delete projects. And the admin can view all information about users, projects and records.
 
 ## SUPER_ADMIN capabilities
-Superadmin can create, modify and delete users and admins. And can view all information about users.
+A superadmin has more power than an admin.
+Superadmin can create, modify and delete users and admins. And can view all information about users. Also superadmin can create, delete, update projects and view all information about projects.
+Superadmin Authentication: 
+```json
+{
+"login":"superadmin",
+"password":"superadmin"
+}
+```
 
 ## Swagger
 You can use swagger <http://localhost:8080/swagger-api>
