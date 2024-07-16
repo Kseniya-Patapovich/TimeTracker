@@ -1,7 +1,5 @@
 package com.timetracker.security;
 
-import com.timetracker.security.CustomUserDetailsService;
-import com.timetracker.security.JwtUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

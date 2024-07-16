@@ -7,7 +7,6 @@ import com.timetracker.model.enums.ProjectStatus;
 import com.timetracker.model.Record;
 import com.timetracker.repository.ProjectRepository;
 import com.timetracker.repository.RecordRepository;
-import com.timetracker.repository.UserRepository;
 import com.timetracker.utils.ProjectUtils;
 import com.timetracker.utils.UserUtils;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,7 +25,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class RecordService {
     private final RecordRepository recordRepository;
-    private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final UserUtils userUtils;
     private final ProjectUtils projectUtils;
@@ -41,7 +39,7 @@ public class RecordService {
 
     public List<Record> getRecordByUserId(Long id) {
         UserTimeTracker user = userUtils.getUser(id);
-        if (user.getLocked() == true) {
+        if (user.getLocked()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + id + " is blocked!");
         }
         if (!recordRepository.existsByUserId(id)) {
@@ -62,9 +60,12 @@ public class RecordService {
     @Transactional
     public Long createRecord(RecordDto recordCreateDto) {
         Record record = new Record();
+        if (recordCreateDto.getRecordDate().isAfter(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Incorrect date!");
+        }
         record.setRecordDate(recordCreateDto.getRecordDate());
         UserTimeTracker user = userUtils.getUser(recordCreateDto.getUserId());
-        if (user.getLocked() == false) {
+        if (!user.getLocked()) {
             record.setUser(user);
         } else {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + recordCreateDto.getUserId() + " is blocked!");
@@ -88,13 +89,15 @@ public class RecordService {
         if (project.getProjectStatus() != ProjectStatus.IN_PROGRESS) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + recordDto.getProjectId() + " is in wrong status!");
         }
-
+        if (recordDto.getRecordDate().isAfter(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Incorrect date!");
+        }
         UserTimeTracker user = userUtils.getUser(recordDto.getUserId());
-        if (user.getLocked() == true) {
+        if (user.getLocked()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + recordDto.getUserId() + " is blocked!");
         }
-        Record record = recordRepository.findByUserIdAndProjectIdAndRecordDate(recordDto.getUserId(), recordDto.getProjectId(), recordDto.getRecordDate());
-               // .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found record with userId=" + recordDto.getUserId() + " and projectId=" + recordDto.getProjectId()));
+        Record record = recordRepository.findByUserIdAndProjectIdAndRecordDate(recordDto.getUserId(), recordDto.getProjectId(), recordDto.getRecordDate())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found record with userId=" + recordDto.getUserId() + " and projectId=" + recordDto.getProjectId()));
         int totalSpentTime = record.getSpent() + recordDto.getTime();
         if (totalSpentTime > 12 * 60) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Today is the time for logs completed!");

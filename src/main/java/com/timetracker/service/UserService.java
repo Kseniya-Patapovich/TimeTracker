@@ -1,14 +1,10 @@
 package com.timetracker.service;
 
-import com.timetracker.model.Project;
-import com.timetracker.model.enums.ProjectStatus;
 import com.timetracker.model.enums.Role;
 import com.timetracker.model.UserTimeTracker;
 import com.timetracker.model.dto.UserCreateDto;
-import com.timetracker.repository.ProjectRepository;
 import com.timetracker.repository.RecordRepository;
 import com.timetracker.repository.UserRepository;
-import com.timetracker.utils.ProjectUtils;
 import com.timetracker.utils.UserUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,7 +23,6 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final RecordRepository recordRepository;
     private final UserUtils userUtils;
-    private final ProjectUtils projectUtils;
 
     public List<UserTimeTracker> getAllUsers() {
         return userRepository.findAll();
@@ -66,21 +61,26 @@ public class UserService {
     @Transactional
     public void updateRole(Long id, String role) {
         UserTimeTracker userToUpdate = userUtils.getUser(id);
-        if (userUtils.getUserRole(id).ordinal() >= userToUpdate.getRole().ordinal()) {
-            userToUpdate.setRole(Role.valueOf(role.toUpperCase().trim()));
+        int currentUserRole = userUtils.getUserRole(id).ordinal();
+        Role newRole = null;
+        for (Role roleValue: Role.values()){
+            if (roleValue.name().equals(role.toUpperCase())){
+                newRole = Role.valueOf(role.toUpperCase());
+                break;
+            } else {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Role entered incorrectly!");
+            }
+        }
+        if (newRole.ordinal() != Role.SUPER_ADMIN.ordinal() && currentUserRole >= userToUpdate.getRole().ordinal() && currentUserRole >= newRole.ordinal()) {
+            userToUpdate.setRole(newRole);
             userRepository.save(userToUpdate);
         } else {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Admin can only change roles for users with role USER!");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You can only change the role for users with a smaller role!");
         }
     }
 
     public List<UserTimeTracker> getUsersByProjectId(Long id) {
-        Project project = projectUtils.getProject(id);
-        if (project.getProjectStatus() == ProjectStatus.DRAFT) {
-            return project.getUsers();
-        } else {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + id + " is not DRAFT status");
-        }
+        return userRepository.getAllByProjectId(id);
     }
 
     @Transactional

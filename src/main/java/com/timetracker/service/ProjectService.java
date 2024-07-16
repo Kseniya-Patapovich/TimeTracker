@@ -62,7 +62,7 @@ public class ProjectService {
     public void addUserToProject(Long projectId, Long userId) {
         Project project = projectUtils.getProject(projectId);
         UserTimeTracker user = userUtils.getUser(userId);
-        if (user.getLocked() == false) {
+        if (!user.getLocked()) {
             project.getUsers().add(user);
             user.getProjects().add(project);
             userRepository.save(user);

@@ -2,7 +2,6 @@ package com.timetracker.controller;
 
 import com.timetracker.model.UserTimeTracker;
 import com.timetracker.model.dto.UserCreateDto;
-import com.timetracker.model.enums.Role;
 import com.timetracker.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
