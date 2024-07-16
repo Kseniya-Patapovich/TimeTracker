@@ -10,6 +10,7 @@ An application for recording the time spent by the user at work.
 - Spring Web
 - Spring Data JPA
 - Postgres
+- Flyway
 - Spring Security
 - Docker Compose
 
