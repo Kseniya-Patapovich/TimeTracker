@@ -61,6 +61,9 @@ public class RecordService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Date must be in past!");
         }
         TimeTrackerUserDetails userDetails = userUtils.getCurrentUser();
+        if (!userRepository.isUserHasProject(userDetails.getId(), recordCreateDto.getProjectId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User doesn't have project!");
+        }
         Project project = projectUtils.getProject(recordCreateDto.getProjectId());
         if (project.getProjectStatus() == ProjectStatus.IN_PROGRESS) {
             Record record = new Record();
@@ -81,6 +84,9 @@ public class RecordService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Incorrect date!");
         }
         TimeTrackerUserDetails userDetails = userUtils.getCurrentUser();
+        if (!userRepository.isUserHasProject(userDetails.getId(), recordDto.getProjectId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User doesn't have project!");
+        }
         Record record = recordRepository.findByUserIdAndProjectIdAndRecordDate(userDetails.getId(), recordDto.getProjectId(), recordDto.getRecordDate())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found record with userId=" + userDetails.getId() + " and projectId=" + recordDto.getProjectId()));
         int totalSpentTime = record.getSpent() + recordDto.getSpentTime();
