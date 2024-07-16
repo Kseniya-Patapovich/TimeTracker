@@ -36,7 +36,17 @@ public class UserService {
     public Long createUser(UserCreateDto userCreateDto) {
         UserTimeTracker user = new UserTimeTracker();
         user.setFullName(userCreateDto.getFullName());
-        user.setRole(Role.USER);
+        for (Role roleValue : Role.values()) {
+            if (roleValue.name().equals(userCreateDto.getRole().toUpperCase())) {
+                Role role = Role.valueOf(userCreateDto.getRole().toUpperCase());
+                if (role.ordinal() == Role.SUPER_ADMIN.ordinal()) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "You cannot create more than one super_admin!");
+                }
+                user.setRole(role);
+            } else {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Role entered incorrectly!");
+            }
+        }
         user.setLogin(userCreateDto.getLogin());
         user.setPassword(passwordEncoder.encode(userCreateDto.getPassword()));
         UserTimeTracker createdUser = userRepository.save(user);
@@ -62,21 +72,21 @@ public class UserService {
     public void updateRole(Long id, String role) {
         UserTimeTracker userToUpdate = userUtils.getUser(id);
         int currentUserRole = userUtils.getUserRole(id).ordinal();
-        Role newRole = null;
-        for (Role roleValue: Role.values()){
-            if (roleValue.name().equals(role.toUpperCase())){
-                newRole = Role.valueOf(role.toUpperCase());
+        for (Role roleValue : Role.values()) {
+            if (roleValue.name().equals(role.toUpperCase())) {
+                Role newRole = Role.valueOf(role.toUpperCase());
+                if (newRole.ordinal() != Role.SUPER_ADMIN.ordinal() && currentUserRole >= userToUpdate.getRole().ordinal() && currentUserRole >= newRole.ordinal()) {
+                    userToUpdate.setRole(newRole);
+                    userRepository.save(userToUpdate);
+                } else {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "You can only change the role for users with a smaller role!");
+                }
                 break;
             } else {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Role entered incorrectly!");
             }
         }
-        if (newRole.ordinal() != Role.SUPER_ADMIN.ordinal() && currentUserRole >= userToUpdate.getRole().ordinal() && currentUserRole >= newRole.ordinal()) {
-            userToUpdate.setRole(newRole);
-            userRepository.save(userToUpdate);
-        } else {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "You can only change the role for users with a smaller role!");
-        }
+
     }
 
     public List<UserTimeTracker> getUsersByProjectId(Long id) {

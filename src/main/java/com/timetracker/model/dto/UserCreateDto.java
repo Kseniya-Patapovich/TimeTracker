@@ -1,5 +1,6 @@
 package com.timetracker.model.dto;
 
+import com.timetracker.model.enums.Role;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -13,4 +14,7 @@ public class UserCreateDto {
 
     @NotNull
     private String password;
+
+    @NotNull
+    private String role;
 }
