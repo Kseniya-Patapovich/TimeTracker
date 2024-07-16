@@ -8,9 +8,9 @@ import com.timetracker.model.dto.UserCreateDto;
 import com.timetracker.repository.ProjectRepository;
 import com.timetracker.repository.RecordRepository;
 import com.timetracker.repository.UserRepository;
+import com.timetracker.utils.ProjectUtils;
 import com.timetracker.utils.UserUtils;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,14 +21,13 @@ import java.util.Optional;
 import java.util.List;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RecordRepository recordRepository;
-    private final ProjectRepository projectRepository;
     private final UserUtils userUtils;
+    private final ProjectUtils projectUtils;
 
     public List<UserTimeTracker> getAllUsers() {
         return userRepository.findAll();
@@ -51,19 +50,14 @@ public class UserService {
 
     @Transactional
     public void updatePassword(String password, Long id) {
-        Optional<UserTimeTracker> userFromDb = userRepository.findById(id);
-        if (userFromDb.isPresent()) {
-            UserTimeTracker user = userFromDb.get();
-            user.setPassword(passwordEncoder.encode(password));
-            userRepository.save(user);
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + id + " not found!");
-        }
+        UserTimeTracker user = userUtils.getUser(id);
+        user.setPassword(passwordEncoder.encode(password));
+        userRepository.save(user);
     }
 
     public void deleteUser(Long id) {
         Optional<UserTimeTracker> userCheck = getUserById(id);
-        if (userCheck.isEmpty() && recordRepository.existsByUserId(id)) {
+        if (userCheck.isEmpty() || recordRepository.existsByUserId(id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + id + "doesn't have records!");
         }
         userRepository.deleteById(id);
@@ -71,8 +65,7 @@ public class UserService {
 
     @Transactional
     public void updateRole(Long id, String role) {
-        UserTimeTracker userToUpdate = userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + id + " not found!"));
+        UserTimeTracker userToUpdate = userUtils.getUser(id);
         if (userUtils.getUserRole(id).ordinal() >= userToUpdate.getRole().ordinal()) {
             userToUpdate.setRole(Role.valueOf(role.toUpperCase().trim()));
             userRepository.save(userToUpdate);
@@ -82,23 +75,17 @@ public class UserService {
     }
 
     public List<UserTimeTracker> getUsersByProjectId(Long id) {
-        Optional<Project> projectFromDb = projectRepository.findById(id);
-        if (projectFromDb.isPresent()) {
-            Project project = projectFromDb.get();
-            if (project.getProjectStatus() == ProjectStatus.DRAFT) {
-                return project.getUsers();
-            } else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + id + " is not DRAFT status");
-            }
+        Project project = projectUtils.getProject(id);
+        if (project.getProjectStatus() == ProjectStatus.DRAFT) {
+            return project.getUsers();
         } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Project with id=" + id + " not found!");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + id + " is not DRAFT status");
         }
     }
 
     @Transactional
     public void blockUser(Long id, boolean locked) {
-        UserTimeTracker userToBlock = userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + id + " not found!"));
+        UserTimeTracker userToBlock = userUtils.getUser(id);
         if (userUtils.getUserRole(id).ordinal() <= userToBlock.getRole().ordinal()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Admin can only block/unblock users with role USER!");
         }

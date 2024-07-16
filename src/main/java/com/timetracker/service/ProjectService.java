@@ -6,6 +6,8 @@ import com.timetracker.model.dto.ProjectCreateDto;
 import com.timetracker.model.enums.ProjectStatus;
 import com.timetracker.repository.ProjectRepository;
 import com.timetracker.repository.UserRepository;
+import com.timetracker.utils.ProjectUtils;
+import com.timetracker.utils.UserUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ import java.util.Optional;
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final UserUtils userUtils;
+    private final ProjectUtils projectUtils;
 
     public List<Project> getAllProjects() {
         return projectRepository.findAll();
@@ -30,13 +34,7 @@ public class ProjectService {
     }
 
     public List<Project> getAllByUserId(Long id) {
-        Optional<UserTimeTracker> userFromDb = userRepository.findById(id);
-        if (userFromDb.isPresent()) {
-            UserTimeTracker user = userFromDb.get();
-            return user.getProjects();
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + id + " not found!");
-        }
+        return projectRepository.findProjectsByUserId(id);
     }
 
     @Transactional
@@ -51,56 +49,37 @@ public class ProjectService {
     }
 
     public Boolean deleteProject(Long id) {
-        Optional<Project> projectFromDb = getProjectById(id);
-        if (projectFromDb.isPresent()) {
-            if (projectFromDb.get().getProjectStatus() == ProjectStatus.DRAFT) {
-                projectRepository.deleteById(id);
-                return getProjectById(id).isEmpty();
-            } else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + id + " is not DRAFT status!");
-            }
+        Project project = projectUtils.getProject(id);
+        if (project.getProjectStatus() == ProjectStatus.DRAFT) {
+            projectRepository.deleteById(id);
+            return getProjectById(id).isEmpty();
         } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Project with id=" + id + " not found!");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + id + " is not DRAFT status!");
         }
     }
 
     @Transactional
     public void addUserToProject(Long projectId, Long userId) {
-        Optional<Project> projectFromDb = projectRepository.findById(projectId);
-        if (projectFromDb.isPresent()) {
-            Project project = projectFromDb.get();
-            Optional<UserTimeTracker> userFromDb = userRepository.findById(userId);
-            if (userFromDb.isPresent()) {
-                UserTimeTracker user = userFromDb.get();
-                if (user.getLocked()) {
-                    project.getUsers().add(user);
-                    user.getProjects().add(project);
-                    userRepository.save(user);
-                } else {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + userId + " is block");
-                }
-            } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id=" + userId + " not found!");
-            }
-            projectRepository.save(project);
+        Project project = projectUtils.getProject(projectId);
+        UserTimeTracker user = userUtils.getUser(userId);
+        if (user.getLocked() == false) {
+            project.getUsers().add(user);
+            user.getProjects().add(project);
+            userRepository.save(user);
         } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Project with id=" + projectId + " not found!");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + userId + " is block");
         }
+        projectRepository.save(project);
     }
 
     @Transactional
     public void updateProjectStatus(Long id, ProjectStatus projectStatus) {
-        Optional<Project> projectFromDb = projectRepository.findById(id);
-        if (projectFromDb.isPresent()) {
-            Project project = projectFromDb.get();
-            if (project.getProjectStatus().ordinal() < projectStatus.ordinal()) {
-                project.setProjectStatus(projectStatus);
-                projectRepository.save(project);
-            } else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + id + " is in the wrong status!");
-            }
+        Project project = projectUtils.getProject(id);
+        if (project.getProjectStatus().ordinal() < projectStatus.ordinal()) {
+            project.setProjectStatus(projectStatus);
+            projectRepository.save(project);
         } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Project with id=" + id + " not found!");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + id + " is in the wrong status!");
         }
     }
 }

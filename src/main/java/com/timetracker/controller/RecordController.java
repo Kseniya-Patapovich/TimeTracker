@@ -34,13 +34,14 @@ public class RecordController {
         return recordService.getRecordById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Record with id=" + id + " not found!"));
     }
 
-    @GetMapping("/project")
-    public List<Record> getRecordsByProjectId(@RequestParam("id") Long id) {
+    @GetMapping("/project/{id}")
+    public List<Record> getRecordsByProjectId(@PathVariable("id") Long id) {
         return recordService.getRecordsByProjectId(id);
     }
 
-    @GetMapping("/user")
-    public List<Record> getRecordByUserId(@RequestParam("id") Long id) {
+    @GetMapping("/user/{id}")
+    @ResponseStatus
+    public List<Record> getRecordByUserId(@PathVariable("id") Long id) {
         return recordService.getRecordByUserId(id);
     }
 
