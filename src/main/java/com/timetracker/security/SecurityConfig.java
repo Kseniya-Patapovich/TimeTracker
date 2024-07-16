@@ -11,12 +11,14 @@ import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableMethodSecurity
@@ -45,16 +47,23 @@ public class SecurityConfig {
     }
 
     @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring()
+                .requestMatchers(new AntPathRequestMatcher("/v3/api-docs/**"))
+                .requestMatchers(new AntPathRequestMatcher("/swagger-ui/**")
+                );
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.PUT, "/projects/changeStatus").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
                         .requestMatchers(HttpMethod.PUT, "/users/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
                         .requestMatchers(HttpMethod.DELETE, "/users/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/users").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/users/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.POST, "/users").hasAuthority(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/users").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/users").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/users/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
                         .requestMatchers(HttpMethod.GET, "/projects").hasAuthority(Role.ADMIN.name())
                         .requestMatchers(HttpMethod.GET, "/projects/**").hasAuthority(Role.ADMIN.name())
                         .requestMatchers(HttpMethod.POST, "/projects").hasAuthority(Role.ADMIN.name())
