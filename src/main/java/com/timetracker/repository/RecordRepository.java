@@ -10,11 +10,13 @@ import java.util.Optional;
 
 @Repository
 public interface RecordRepository extends JpaRepository<Record, Long> {
-    List<Record> findAllByUserId(Long id);
+    List<Record> findAllByUserId(long id);
 
-    List<Record> findAllByProjectId(Long id);
+    List<Record> findAllByProjectId(long id);
 
-    Optional<Record> findByUserIdAndProjectIdAndRecordDate(Long userId, Long projectId, LocalDate recordDate);
+    Optional<Record> findByUserIdAndProjectIdAndRecordDate(long userId, long projectId, LocalDate recordDate);
 
-    Boolean existsByUserId(Long id);
+    Optional<Record> findByIdAndUserId(long id, long userId);
+
+    Boolean existsByUserId(long id);
 }

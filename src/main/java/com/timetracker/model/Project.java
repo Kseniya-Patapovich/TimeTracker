@@ -37,5 +37,5 @@ public class Project {
             name = "user_to_project",
             joinColumns = @JoinColumn(name = "project_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id"))
-    private List<UserTimeTracker> users;
+    private List<TimeTrackerUser> users;
 }

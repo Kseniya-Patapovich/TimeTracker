@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final AuthService securityService;
+    private final AuthService authService;
 
-    @PostMapping
-    public String generateToken(@RequestBody AuthRequestDto authRequestDto) {
-        return securityService.login(authRequestDto);
+    @PostMapping("/login")
+    public String login(@RequestBody AuthRequestDto authRequestDto) {
+        return authService.login(authRequestDto);
     }
 }

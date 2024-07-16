@@ -1,7 +1,6 @@
 package com.timetracker.repository;
 
-import com.timetracker.model.UserTimeTracker;
-import com.timetracker.model.enums.Role;
+import com.timetracker.model.TimeTrackerUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,13 +10,9 @@ import java.util.Optional;
 import java.util.List;
 
 @Repository
-public interface UserRepository extends JpaRepository<UserTimeTracker, Long> {
-    Optional<UserTimeTracker> findByLogin(String login);
-
-    List<UserTimeTracker> findByRole(Role role);
-
-    Optional<UserTimeTracker> findByFullName(String fullName);
+public interface UserRepository extends JpaRepository<TimeTrackerUser, Long> {
+    Optional<TimeTrackerUser> findByLogin(String login);
 
     @Query("SELECT u FROM time_tracker_user u JOIN u.projects p WHERE p.id = :projectId")
-    List<UserTimeTracker> getAllByProjectId(@Param("projectId") Long projectId);
+    List<TimeTrackerUser> getAllByProjectId(@Param("projectId") Long projectId);
 }

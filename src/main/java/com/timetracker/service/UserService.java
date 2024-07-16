@@ -1,10 +1,12 @@
 package com.timetracker.service;
 
+import com.timetracker.exception.UserNotFoundException;
 import com.timetracker.model.enums.Role;
-import com.timetracker.model.UserTimeTracker;
+import com.timetracker.model.TimeTrackerUser;
 import com.timetracker.model.dto.UserCreateDto;
 import com.timetracker.repository.RecordRepository;
 import com.timetracker.repository.UserRepository;
+import com.timetracker.security.TimeTrackerUserDetails;
 import com.timetracker.utils.UserUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Optional;
 import java.util.List;
 
 @Service
@@ -24,80 +25,65 @@ public class UserService {
     private final RecordRepository recordRepository;
     private final UserUtils userUtils;
 
-    public List<UserTimeTracker> getAllUsers() {
+    public List<TimeTrackerUser> getAllUsers() {
         return userRepository.findAll();
     }
 
-    public Optional<UserTimeTracker> getUserById(Long id) {
-        return userRepository.findById(id);
+    public TimeTrackerUser getUserById(long id) {
+        return userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+    }
+
+    public List<TimeTrackerUser> getUsersByProjectId(long projectId) {
+        return userRepository.getAllByProjectId(projectId);
     }
 
     @Transactional
-    public Long createUser(UserCreateDto userCreateDto) {
-        UserTimeTracker user = new UserTimeTracker();
+    public long createUser(UserCreateDto userCreateDto) {
+        Role role = Role.getByName(userCreateDto.getRole());
+        if(role.equals(Role.SUPER_ADMIN)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Super admin creation is forbid!");
+        TimeTrackerUser user = new TimeTrackerUser();
         user.setFullName(userCreateDto.getFullName());
-        for (Role roleValue : Role.values()) {
-            if (roleValue.name().equals(userCreateDto.getRole().toUpperCase())) {
-                Role role = Role.valueOf(userCreateDto.getRole().toUpperCase());
-                if (role.ordinal() == Role.SUPER_ADMIN.ordinal()) {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "You cannot create more than one super_admin!");
-                }
-                user.setRole(role);
-            } else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Role entered incorrectly!");
-            }
-        }
+        user.setRole(role);
         user.setLogin(userCreateDto.getLogin());
         user.setPassword(passwordEncoder.encode(userCreateDto.getPassword()));
-        UserTimeTracker createdUser = userRepository.save(user);
-        return createdUser.getId();
+        userRepository.save(user);
+        return user.getId();
     }
 
     @Transactional
-    public void updatePassword(String password, Long id) {
-        UserTimeTracker user = userUtils.getUser(id);
+    public void changePassword(String password) {
+        TimeTrackerUserDetails userDetails = userUtils.getCurrentUser();
+        TimeTrackerUser user = userRepository.findById(userDetails.getId()).orElseThrow();
         user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
     }
 
-    public void deleteUser(Long id) {
-        Optional<UserTimeTracker> userCheck = getUserById(id);
-        if (userCheck.isEmpty() || recordRepository.existsByUserId(id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + id + "doesn't have records!");
+    public void deleteUser(long id) {
+        TimeTrackerUser userToDelete = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        if(userToDelete.getRole().ordinal() >= userUtils.getCurrentUser().getRole().ordinal()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not enough permits!");
+        }
+        if (recordRepository.existsByUserId(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot delete user, cause already have record");
         }
         userRepository.deleteById(id);
     }
 
     @Transactional
-    public void updateRole(Long id, String role) {
-        UserTimeTracker userToUpdate = userUtils.getUser(id);
-        int currentUserRole = userUtils.getUserRole(id).ordinal();
-        for (Role roleValue : Role.values()) {
-            if (roleValue.name().equals(role.toUpperCase())) {
-                Role newRole = Role.valueOf(role.toUpperCase());
-                if (newRole.ordinal() != Role.SUPER_ADMIN.ordinal() && currentUserRole >= userToUpdate.getRole().ordinal() && currentUserRole >= newRole.ordinal()) {
-                    userToUpdate.setRole(newRole);
-                    userRepository.save(userToUpdate);
-                } else {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "You can only change the role for users with a smaller role!");
-                }
-                break;
-            } else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Role entered incorrectly!");
-            }
-        }
-
-    }
-
-    public List<UserTimeTracker> getUsersByProjectId(Long id) {
-        return userRepository.getAllByProjectId(id);
+    public void updateRole(long id, String role) {
+        Role currentUserRole = userUtils.getCurrentUser().getRole();
+        TimeTrackerUser userToUpdate = userUtils.getUser(id);
+        if (currentUserRole.ordinal() <= userToUpdate.getRole().ordinal()) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not enough permits!");
+        Role newRole = Role.getByName(role);
+        userToUpdate.setRole(newRole);
+        userRepository.save(userToUpdate);
     }
 
     @Transactional
-    public void blockUser(Long id, boolean locked) {
-        UserTimeTracker userToBlock = userUtils.getUser(id);
-        if (userUtils.getUserRole(id).ordinal() <= userToBlock.getRole().ordinal()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Admin can only block/unblock users with role USER!");
+    public void blockUser(long id, boolean locked) {
+        TimeTrackerUser userToBlock = userUtils.getUser(id);
+        if (userUtils.getCurrentUser().getRole().ordinal() <= userToBlock.getRole().ordinal()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not enough permits!");
         }
         userToBlock.setLocked(locked);
         userRepository.save(userToBlock);

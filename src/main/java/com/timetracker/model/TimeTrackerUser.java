@@ -17,10 +17,10 @@ import java.util.List;
 
 @Data
 @Entity(name = "time_tracker_user")
-public class UserTimeTracker {
+public class TimeTrackerUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private long id;
 
     @Column(nullable = false)
     private String fullName;

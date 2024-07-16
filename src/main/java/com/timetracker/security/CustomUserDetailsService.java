@@ -1,6 +1,6 @@
 package com.timetracker.security;
 
-import com.timetracker.model.UserTimeTracker;
+import com.timetracker.model.TimeTrackerUser;
 import com.timetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.User;
@@ -18,15 +18,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<UserTimeTracker> userInfoOptional = userRepository.findByLogin(username);
-        if (userInfoOptional.isEmpty()) {
-            throw new UsernameNotFoundException("Username not found: " + username);
-        }
-        UserTimeTracker user = userInfoOptional.get();
-        return User.builder()
-                .username(user.getLogin())
-                .password(user.getPassword())
-                .authorities(user.getRole().name())
-                .build();
+        TimeTrackerUser user = userRepository.findByLogin(username).orElseThrow(() -> new UsernameNotFoundException("Username not found: " + username));
+        return new TimeTrackerUserDetails(user);
     }
 }

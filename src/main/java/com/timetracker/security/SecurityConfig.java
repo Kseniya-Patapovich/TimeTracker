@@ -1,6 +1,10 @@
 package com.timetracker.security;
 
 import com.timetracker.model.enums.Role;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,34 +50,48 @@ public class SecurityConfig {
         return authProvider;
     }
 
-    @Bean
+    /*@Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring()
                 .requestMatchers(new AntPathRequestMatcher("/v3/api-docs/**"))
-                .requestMatchers(new AntPathRequestMatcher("/swagger-ui/**")
+                .requestMatchers(new AntPathRequestMatcher("/swagger-ui.html")
                 );
     }
+
+    private SecurityScheme createAPIKeyScheme() {
+        return new SecurityScheme().type(SecurityScheme.Type.HTTP)
+                .bearerFormat("JWT")
+                .scheme("bearer");
+    }
+
+    @Bean
+    public OpenAPI openAPI() {
+        return new OpenAPI().addSecurityItem(new SecurityRequirement().
+                        addList("Bearer Authentication"))
+                .components(new Components().addSecuritySchemes
+                        ("Bearer Authentication", createAPIKeyScheme()));
+    }*/
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.PUT, "/users/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.DELETE, "/users/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
                         .requestMatchers(HttpMethod.GET, "/users").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/users/projects/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
                         .requestMatchers(HttpMethod.POST, "/users").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/users/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/projects").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/projects/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.POST, "/projects").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.PUT, "/projects/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.DELETE, "/projects/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/records").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.GET, "/records/**").hasAuthority(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.POST, "/records").hasAuthority(Role.USER.name())
-                        .requestMatchers(HttpMethod.PUT, "/records").hasAuthority(Role.USER.name())
-                        .requestMatchers(HttpMethod.POST, "/auth").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/users/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.PUT, "/users/block/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE, "/users/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/projects").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/projects/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/projects").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.PUT, "/projects/changeStatus/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.PUT, "/projects/**/user/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE, "/projects/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/records/project/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/records/**").hasAnyAuthority(Role.SUPER_ADMIN.name(), Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

@@ -1,7 +1,7 @@
 package com.timetracker.service;
 
 import com.timetracker.model.Project;
-import com.timetracker.model.UserTimeTracker;
+import com.timetracker.model.TimeTrackerUser;
 import com.timetracker.model.dto.ProjectCreateDto;
 import com.timetracker.model.enums.ProjectStatus;
 import com.timetracker.repository.ProjectRepository;
@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,11 +28,11 @@ public class ProjectService {
         return projectRepository.findAll();
     }
 
-    public Optional<Project> getProjectById(Long id) {
-        return projectRepository.findById(id);
+    public Project getProjectById(long id) {
+        return projectRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project " + id + " not found"));
     }
 
-    public List<Project> getAllByUserId(Long id) {
+    public List<Project> getAllByUserId(long id) {
         return projectRepository.findProjectsByUserId(id);
     }
 
@@ -42,41 +41,37 @@ public class ProjectService {
         Project project = new Project();
         project.setProjectName(projectCreateDto.getProjectName());
         project.setProjectStatus(ProjectStatus.DRAFT);
-        List<UserTimeTracker> users = userRepository.findAllById(projectCreateDto.getUsersId());
+        List<TimeTrackerUser> users = userRepository.findAllById(projectCreateDto.getUsersId());
         project.setUsers(users);
         Project createdProject = projectRepository.save(project);
         return createdProject.getId();
     }
 
-    public Boolean deleteProject(Long id) {
+    @Transactional
+    public void deleteProject(Long id) {
         Project project = projectUtils.getProject(id);
         if (project.getProjectStatus() == ProjectStatus.DRAFT) {
-            projectRepository.deleteById(id);
-            return getProjectById(id).isEmpty();
+            projectRepository.delete(project);
         } else {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + id + " is not DRAFT status!");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Possible to delete only DRAFT projects!");
         }
     }
 
     @Transactional
-    public void addUserToProject(Long projectId, Long userId) {
+    public void addUserToProject(long projectId, long userId) {
         Project project = projectUtils.getProject(projectId);
-        UserTimeTracker user = userUtils.getUser(userId);
-        if (!user.getLocked()) {
-            project.getUsers().add(user);
-            user.getProjects().add(project);
-            userRepository.save(user);
-        } else {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "User with id=" + userId + " is block");
-        }
-        projectRepository.save(project);
+        TimeTrackerUser user = userUtils.getUser(userId);
+
+        user.getProjects().add(project);
+        userRepository.save(user);
     }
 
     @Transactional
-    public void updateProjectStatus(Long id, ProjectStatus projectStatus) {
+    public void updateProjectStatus(long id, String projectStatus) {
         Project project = projectUtils.getProject(id);
-        if (project.getProjectStatus().ordinal() < projectStatus.ordinal()) {
-            project.setProjectStatus(projectStatus);
+        ProjectStatus newStatus = ProjectStatus.getByName(projectStatus);
+        if (project.getProjectStatus().ordinal() < newStatus.ordinal()) {
+            project.setProjectStatus(newStatus);
             projectRepository.save(project);
         } else {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Project with id=" + id + " is in the wrong status!");

@@ -29,7 +29,7 @@ public class Record {
 
     @ManyToOne
     @JoinColumn(name = "users_id", nullable = false)
-    private UserTimeTracker user;
+    private TimeTrackerUser user;
 
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)
