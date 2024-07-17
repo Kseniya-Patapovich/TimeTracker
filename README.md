@@ -35,9 +35,6 @@ Superadmin Authentication:
 }
 ```
 
-## Swagger
-You can use swagger <http://localhost:8080/swagger-api>
-
 ## How to run the application using docker:
 1. ```git clone https://github.com/Kseniya-Patapovich/TimeTracker.git```
 2. ```docker-compose build```
