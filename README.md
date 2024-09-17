@@ -1,5 +1,4 @@
 # TimeTracker
-Test task Java trainee Krainet
 
 ## Descriptions
 An application for recording the time spent by the user at work.
